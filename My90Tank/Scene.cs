@@ -7,11 +7,13 @@ using System.Windows.Forms;
 
 namespace My90Tank
 {
+    
     public class Scene
     {
+        public static int numOfPlayer = 1;
         public static int MAX_ENEMY_NUMBER = 20;
-        private P1Player play1 = new P1Player(240, 540, 5, 12, 1, DIRECTION.UP);//speed was 8
-        private P1Player play1_ = new P1Player(240, 540, 3, 6, 3, DIRECTION.UP);
+        private P1Player play1 = new P1Player(240, 540, 3, 8, 1, DIRECTION.UP);
+        
         private P2Player play2 = new P2Player(480, 540, 3, 6, 1, DIRECTION.UP);
         private Symbol symbol = new Symbol(360, 560);
 
@@ -23,26 +25,30 @@ namespace My90Tank
         private List<Missile> missileList = new List<Missile>();
 
 
-
+        
         public P1Player P1Play
         {
             get
             {
-                if (Form1.Tank_Type == 2)
-                    return play1_;
-                else //if(Form1.Tank_Type==2)
-                     return play1;
+                return play1;
             }
             set
             {
-                if (Form1.Tank_Type == 2)
-                 play1_ = value;
-                else
-                 play1 = value;
+                play1 = value;
             }
         }
 
-       
+       public P2Player P2Play
+        {
+           get
+            {
+                return play2;
+            }
+           set
+            {
+                play2 = value;
+            }
+        }
 
         private static Scene instance = null;
 
@@ -66,9 +72,9 @@ namespace My90Tank
         public void CreateAnEnemyAndAdd()
         {
             Random random = new Random((int)DateTime.Now.Ticks);
-            int t = random.Next(3);//t=0,1,2
+            int t = random.Next(3);
             EnemyType type = (EnemyType)t;
-            int p = random.Next(3);//birth place
+            int p = random.Next(3);
             int birthX = 0;
             int birthY = 0;
             if (p == 0)
@@ -90,8 +96,7 @@ namespace My90Tank
         {
             if (ele is P1Player)
             {
-              //  this.play1 = ele as P1Player;
-                this.P1Play = ele as P1Player;
+                this.play1 = ele as P1Player;
             }
             else if( ele is Wall)
             {
@@ -137,8 +142,14 @@ namespace My90Tank
         public void Draw(Graphics g)
         {
             this.P1Play.Draw(g);
+            if(numOfPlayer == 2)
+            {
+                this.P2Play.Draw(g);
+            }
             
-            
+
+            foreach (Grass grass in grassList)
+                grass.Draw(g);
             foreach (Wall wall in wallList)
                 wall.Draw(g);
             foreach (Water water in waterList)
@@ -151,8 +162,8 @@ namespace My90Tank
                 enemy.Draw(g);
             if (this.symbol != null)
                 symbol.Draw(g);
-            foreach (Grass grass in grassList)
-                grass.Draw(g);
+
+
 
         }
 
@@ -160,16 +171,13 @@ namespace My90Tank
         {
             List<Missile> deadMissile = new List<Missile>();
             CheckBlock(P1Play);
-            
+            CheckBlock(P2Play);
+
             foreach (Enemy enemy in enemyList)            
                 CheckBlock(enemy);
             foreach (Missile missile in missileList)
-            {
-                if (CheckDeadAndRemove(missile))
-                {
-                    deadMissile.Add(missile);
-                }
-            }
+                deadMissile = CheckDeadAndRemove(missile);
+
             for (int i = 0; i < deadMissile.Count; i++)
             {
                 missileList.Remove(deadMissile[i]);
@@ -209,7 +217,7 @@ namespace My90Tank
                     return;
                 }
             }
-            if (m is P1Player)
+            if (m is P1Player || m is P2Player)
             {
                 for (i = 0; i < enemyList.Count; i++)
                 {
@@ -240,7 +248,7 @@ namespace My90Tank
         }
 
         //用missile对象确定场景中目标的生命值小于等于0，并删除掉该对象
-        public bool CheckDeadAndRemove(Missile m)
+        public List<Missile> CheckDeadAndRemove(Missile m)
         {
             List<Missile> deadMissiles = new List<Missile>();
             int i = 0;
@@ -248,8 +256,9 @@ namespace My90Tank
             {
                 if (m.GetRectangle().IntersectsWith(wallList[i].GetRectangle()))
                 {
+                    deadMissiles.Add(m);
                     wallList.RemoveAt(i);
-                    return true;
+                    return deadMissiles;
                 }
             }
             
@@ -257,25 +266,33 @@ namespace My90Tank
             {
                 if (m.GetRectangle().IntersectsWith(steelList[i].GetRectangle()))
                 {
-                    //deadMissiles.Add(m);
+                    deadMissiles.Add(m);
                     if (m.power > 2)
                     {
                         steelList.RemoveAt(i);
                         i--;
                     }
-                    return true;
+                    return deadMissiles;
                 }
             }
             
             
             if (m.GetRectangle().IntersectsWith(P1Play.GetRectangle()))
             {
-                //deadMissiles.Add(m);
+                deadMissiles.Add(m);
                 P1Play.life = 0;
                 //MessageBox.Show("Game Over!");
-                return true;
+                return deadMissiles;
             }
 
+
+            if (m.GetRectangle().IntersectsWith(P2Play.GetRectangle()))
+            {
+                deadMissiles.Add(m);
+                P2Play.life = 0;
+                //MessageBox.Show("Game Over!");
+                return deadMissiles;
+            }
 
             for (i = 0; i < enemyList.Count; i++)
             {
@@ -283,19 +300,19 @@ namespace My90Tank
                 {
                     enemyList.RemoveAt(i);
                     i--;
-                    //deadMissiles.Add(m);
-                    return true;
+                    deadMissiles.Add(m);
+                    return deadMissiles;
                 }
             }
 
             if (m.X == 0 || m.Y == 0 || m.X >= ParamSetting.Map_Width || m.Y >= ParamSetting.Map_Height)
-                //  deadMissiles.Add(m);
-                return true;
-            if (enemyList.Count == 0) { }
-               // MessageBox.Show("Yow Win!");
+                deadMissiles.Add(m);
+
+            if (enemyList.Count == 0)
+                MessageBox.Show("Yow Win!");
             
             //m.IsBlocked = false;
-            return false;
+            return deadMissiles;
         }
     }
 }

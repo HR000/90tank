@@ -14,28 +14,21 @@ namespace My90Tank
         private Bitmap canvas = new Bitmap(ParamSetting.Map_Width, ParamSetting.Map_Height);
         private Graphics gra ;
         private int num = 0;
-        public static int tank_type=0;
-        public Form1(int type)
+        public static int numOfPlayer = 1;
+        public Form1()
         {            
             InitializeComponent();
-            tank_type = type;
+            //Judge j = this.Owner;
             this.Width = ParamSetting.Map_Width+6;//两边边框的宽度
             this.Height = ParamSetting.Map_Height+24;//24是窗体中标题头的高度加上边框的高度
             InitGame();
             this.timer1.Start();
             gra = Graphics.FromImage(canvas);
             this.pictureBox1.Image = canvas;
-     
+            
+            
         }
-        public static int Tank_Type {
-            set {
-                tank_type = value;
-            }
-            get {
-                return tank_type;
-            }
-        }
-        
+
         private void InitGame()   //初始化游戏事件
         {
             //Scene.Instance.AddElement(new P1Player(240, 540, 5, 10,1, DIRECTION.UP));
@@ -153,13 +146,13 @@ namespace My90Tank
         private void Form1_KeyDown(object sender, KeyEventArgs e)
         {
             Scene.Instance.P1Play.KeyDown(e);
-            
+            Scene.Instance.P2Play.KeyDown(e);   
         }
 
         private void Form1_KeyUp(object sender, KeyEventArgs e)
         {
             Scene.Instance.P1Play.KeyUp(e);
-            
+            Scene.Instance.P2Play.KeyUp(e);
         }
 
         private void pictureBox1_Paint(object sender, PaintEventArgs e)
